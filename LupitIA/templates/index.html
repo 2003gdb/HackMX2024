@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LupitIA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css"> <!-- Enlace al archivo CSS -->
+</head>
+<body>
+
+    <!-- Botón LupitIA con estilo especial -->
+    <button class="lupitia-button">
+        <span>LupitIA</span>
+    </button>
+
+    <!-- Contenedor de los botones -->
+    <div class="button-container">
+        <!-- Botón Hacer venta -->
+        <button id="ventas-button" class="ventas-button" onclick="startRecording()">
+            <div class="svg-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="35" height="35">
+                    <rect x="8" y="16" width="48" height="32" fill="#000000" rx="4" ry="4"/>
+                    <rect x="12" y="20" width="40" height="24" fill="#46a148" rx="2" ry="2"/>
+                    <circle cx="32" cy="32" r="6" fill="#000000"/>
+                    <text x="32" y="35" font-family="Arial" font-size="8" fill="#46a148" text-anchor="middle">$</text>
+                    <circle cx="48" cy="16" r="10" fill="#000000"/>
+                    <circle cx="48" cy="16" r="8" fill="#46a148"/>
+                    <text x="48" y="20" font-family="Arial" font-size="8" fill="#000000" text-anchor="middle">$</text>
+                </svg>
+            </div>
+            <span>Hacer venta</span>
+        </button>
+
+        <!-- Botón Hacer inventario con SVG de caja de cartón -->
+        <button id="hacer-inventario" onclick="startInventoryRecording()" class="inventario-button">
+            <div class="svg-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="35" height="35">
+                    <rect x="2" y="20" width="60" height="28" fill="#c69c6d" />
+                    <rect x="20" y="28" width="8" height="12" fill="#8b5e3b" />
+                    <rect x="36" y="28" width="8" height="12" fill="#8b5e3b" />
+                </svg>
+            </div>
+            <span>Hacer inventario</span>
+        </button>
+
+        <!-- Botón Dar inventario a comprar con SVG de camión de entrega -->
+        <button id="mostrar_inventario_a_comprar" onclick="mostrarInventarioAComprar()" class="dar-inventario-button">
+            <div class="svg-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="35" height="35">
+                    <rect x="2" y="24" width="42" height="18" fill="#c69c6d" />
+                    <rect x="44" y="28" width="16" height="16" fill="#c69c6d" />
+                    <circle cx="18" cy="48" r="4" fill="#000000"/>
+                    <circle cx="50" cy="48" r="4" fill="#000000"/>
+                    <path d="M2 24h42v18H2z" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <span>Dar inventario a comprar</span>
+        </button>
+
+        <!-- Botón Catálogo con SVG de una nota -->
+        <button id="catalogo" onclick="mostrarCatalogo()" class="catalogo-button">
+            <div class="svg-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="35" height="35">
+                    <rect x="12" y="12" width="40" height="40" fill="#c69c6d" rx="4" ry="4"/>
+                    <line x1="20" y1="20" x2="44" y2="20" stroke="#FFFFFF" stroke-width="2"/>
+                    <line x1="20" y1="28" x2="44" y2="28" stroke="#FFFFFF" stroke-width="2"/>
+                    <line x1="20" y1="36" x2="44" y2="36" stroke="#FFFFFF" stroke-width="2"/>
+                    <line x1="20" y1="44" x2="44" y2="44" stroke="#FFFFFF" stroke-width="2"/>
+                </svg>
+            </div>
+            <span>Catálogo</span>
+        </button>
+    </div>
+
+    <p id="transcript">Texto reconocido: Ninguno</p>
+    <p id="status">Estado: Inactivo</p>
+    <p id="imprimir"></p>
+    <div id="catalogo-output"></div>
+    
+    <div id="status-hacer-catalogo">Estado: </div>
+    <div id="inventario-status"></div>
+
+    <div id="inventario-comprar-output"></div>
+
+    <script>
+
+        function toggleVisibility(elementId) {
+            // Oculta todos los elementos
+            document.getElementById("imprimir").style.display = "none";
+            document.getElementById("catalogo-output").style.display = "none";
+            document.getElementById("status-hacer-catalogo").style.display = "none";
+            document.getElementById("inventario-status").style.display = "none";
+            document.getElementById("inventario-comprar-output").style.display = "none";
+
+            // Muestra solo el elemento que se necesita
+            document.getElementById(elementId).style.display = "block";
+        }
+
+        function startRecording() {
+            const recordButton = document.getElementById('ventas-button');
+            document.getElementById('status').textContent = "Grabando...";
+
+            fetch('/api/record', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la grabación');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('status').textContent = "Grabación completada.";
+                document.getElementById('transcript').textContent = "Texto reconocido: " + data.text;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('status').textContent = "Error en la grabación.";
+
+            });
+        }
+
+        function mostrarCatalogo() {
+            toggleVisibility("catalogo-output");
+            const recordButton = document.getElementById('catalogo');
+            fetch('/mostrar_catalogo')
+                .then(response => response.json())
+                .then(data => {
+                    let output = "<h3>Catálogo</h3><ul>";
+                    data.forEach(item => output += `<li> Nombre:${item.nombre}, Cantidad en Inventario:${item.cantidad}</li>`);
+                    output += "</ul>";
+                    document.getElementById("catalogo-output").innerHTML = output;
+                })
+                .catch(error => console.error(error));
+        }
+
+        function mostrarInventarioAComprar() {
+            toggleVisibility("inventario-comprar-output");  // Muestra
+            const recordButton = document.getElementById('mostrar_inventario_a_comprar');
+            fetch('/mostrar_inventario_a_comprar')
+                .then(response => response.json())
+                .then(data => {
+                    let output = "<h3>Inventario a Comprar</h3><ul>";
+                    data.forEach(item => output += `<li>Comprar ${item.cantidad_a_comprar} ${item.nombre}</li>`);
+                    output += "</ul>";
+                    document.getElementById("inventario-comprar-output").innerHTML = output;
+                })
+                .catch(error => console.error(error));
+        }
+
+        let indiceProducto = 0;
+
+        function startInventoryRecording() {
+            toggleVisibility("status-hacer-catalogo");
+            document.getElementById("status-hacer-catalogo").textContent = "Iniciando grabación...";
+            document.getElementById("inventario-status").innerHTML = "";  // Limpia el estado previo
+            indiceProducto = 0;  // Reinicia el índice
+            recordProduct();
+        }
+
+        function recordProduct() {
+            fetch(`/obtener-producto/${indiceProducto}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.status === 404) {
+                    throw new Error('Producto no encontrado'); // Controla el error de producto no encontrado
+                } else if (!response.ok) {
+                    throw new Error('Error al obtener el nombre del producto');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.fin) {  // Verifica si el backend indica que terminó
+                    document.getElementById("status-hacer-catalogo").textContent = data.fin;
+                    return;  // Detenemos la ejecución si la lista está vacía
+                }
+
+                // Si no ha terminado, continúa con la grabación del producto
+                document.getElementById("status-hacer-catalogo").textContent = `¿Cuántos ${data.nombre} tienes en inventario? Grabando...`;
+
+                // Inicia la grabación del producto
+                return fetch(`/hacer-inventario/${indiceProducto}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la grabación');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.fin) {
+                    // Si el backend indica que la grabación ha terminado y lista está vacía
+                    document.getElementById("status-hacer-catalogo").textContent = data.fin;
+                    return;  // Detener la llamada recursiva
+                }
+
+                if (data.nombre && data.cantidad !== undefined) {
+                    document.getElementById("inventario-status").innerHTML += `<p>Se registró ${data.cantidad} unidades de ${data.nombre}</p>`;
+                }
+
+                document.getElementById('status').textContent = "Grabación completada.";
+                document.getElementById('transcript').textContent = "Texto reconocido: " + (data.text || "Ninguno");
+
+                indiceProducto++;  // Avanzamos al siguiente producto
+                recordProduct();  // Llama de nuevo para el siguiente producto
+            })
+            .catch(error => {
+                if (error.message === 'Producto no encontrado') {
+                    document.getElementById("status-hacer-catalogo").textContent = "Inventario completado.";
+                } else {
+                    console.error('Error:', error);
+                    document.getElementById("status-hacer-catalogo").textContent = "Error en la grabación: " + error.message;
+                }
+            });
+        }
+    </script> <!-- Enlace al archivo JS -->
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grabación de Voz</title>
+</head>
+<body>
+    <button id="recordButton">Grabar</button>
+    <p id="status">Presiona el botón para comenzar a grabar.</p>
+    <script>
+        const recordButton = document.getElementById('recordButton');
+        const statusText = document.getElementById('status');
+        let mediaRecorder;
+        let audioChunks = [];
+
+        recordButton.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                statusText.textContent = 'Grabación finalizada. Procesando...';
+            } else {
+                startRecording();
+            }
+        });
+
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.start();
+                    statusText.textContent = 'Grabando...';
+
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        audioChunks = [];
+                        const formData = new FormData();
+                        formData.append('audio', audioBlob, 'recording.wav');
+
+                        // Enviar el archivo de audio al backend
+                        fetch('/upload', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            statusText.textContent = `Texto reconocido: ${data.text}`;
+                        })
+                        .catch(error => {
+                            statusText.textContent = 'Error al procesar el audio.';
+                            console.error(error);
+                        });
+                    };
+                })
+                .catch(error => {
+                    statusText.textContent = 'Error al acceder al micrófono.';
+                    console.error(error);
+                });
+        }
+    </script>
+</body>
+</html>
